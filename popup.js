@@ -1,13 +1,3 @@
-/**
- * YouTube PiP Subtitles - Popup Script
- * Reads, updates, and saves settings to chrome.storage.sync.
- */
-
-// GoatCounter: increment counter every time popup is opened
-fetch('https://mehmetkahya.goatcounter.com/count?p=/popup-opened', {
-  method: 'GET', mode: 'no-cors'
-}).catch(() => {});
-
 const defaults = {
   fontSize: 16,
   fontFamily: 'Trebuchet MS',
@@ -17,28 +7,26 @@ const defaults = {
 };
 
 // Elements
-const fontSizeInput   = document.getElementById('font-size');
-const fontSizeVal     = document.getElementById('font-size-val');
+const fontSizeInput = document.getElementById('font-size');
+const fontSizeVal = document.getElementById('font-size-val');
 const fontFamilyInput = document.getElementById('font-family');
-const textColorInput  = document.getElementById('text-color');
-const bgOpacityInput  = document.getElementById('bg-opacity');
-const bgOpacityVal    = document.getElementById('bg-opacity-val');
-const previewText     = document.getElementById('preview-text');
-const saveIndicator   = document.getElementById('save-indicator');
-const resetBtn        = document.getElementById('reset-btn');
-const statusDot       = document.getElementById('status-dot');
-const statusText      = document.getElementById('status-text');
-const posButtons      = document.querySelectorAll('.toggle-btn[data-pos]');
+const textColorInput = document.getElementById('text-color');
+const bgOpacityInput = document.getElementById('bg-opacity');
+const bgOpacityVal = document.getElementById('bg-opacity-val');
+const previewText = document.getElementById('preview-text');
+const saveIndicator = document.getElementById('save-indicator');
+const resetBtn = document.getElementById('reset-btn');
+const posButtons = document.querySelectorAll('.toggle-btn[data-pos]');
 
 let saveTimer = null;
 
 // ─── Load ────────────────────────────────────────────────────────────────────
-chrome.storage.sync.get(defaults, (saved) => {
-  fontSizeInput.value   = saved.fontSize;
+chrome.storage.local.get(defaults, (saved) => {
+  fontSizeInput.value = saved.fontSize;
   fontSizeVal.textContent = saved.fontSize + 'px';
   fontFamilyInput.value = saved.fontFamily;
-  textColorInput.value  = saved.textColor;
-  bgOpacityInput.value  = saved.bgOpacity;
+  textColorInput.value = saved.textColor;
+  bgOpacityInput.value = saved.bgOpacity;
   bgOpacityVal.textContent = saved.bgOpacity + '%';
   setActivePosition(saved.position);
   updatePreview(saved);
@@ -66,11 +54,11 @@ posButtons.forEach((btn) => {
 });
 
 resetBtn.addEventListener('click', () => {
-  fontSizeInput.value    = defaults.fontSize;
+  fontSizeInput.value = defaults.fontSize;
   fontSizeVal.textContent = defaults.fontSize + 'px';
-  fontFamilyInput.value  = defaults.fontFamily;
-  textColorInput.value   = defaults.textColor;
-  bgOpacityInput.value   = defaults.bgOpacity;
+  fontFamilyInput.value = defaults.fontFamily;
+  textColorInput.value = defaults.textColor;
+  bgOpacityInput.value = defaults.bgOpacity;
   bgOpacityVal.textContent = defaults.bgOpacity + '%';
   setActivePosition(defaults.position);
   saveAndPreview();
@@ -90,7 +78,7 @@ function saveAndPreview() {
       ...current,
       bgColor: `rgba(0,0,0,${opacity})`,
     };
-    chrome.storage.sync.set(toSave, () => {
+    chrome.storage.local.set(toSave, () => {
       flashSaved();
     });
   }, 400);
@@ -99,19 +87,19 @@ function saveAndPreview() {
 function getCurrentSettings() {
   const activePos = document.querySelector('.toggle-btn.active');
   return {
-    fontSize:   parseInt(fontSizeInput.value),
+    fontSize: parseInt(fontSizeInput.value),
     fontFamily: fontFamilyInput.value,
-    textColor:  textColorInput.value,
-    bgOpacity:  parseInt(bgOpacityInput.value),
-    position:   activePos ? activePos.dataset.pos : 'bottom',
+    textColor: textColorInput.value,
+    bgOpacity: parseInt(bgOpacityInput.value),
+    position: activePos ? activePos.dataset.pos : 'bottom',
   };
 }
 
 function updatePreview(s) {
   const opacity = ((s.bgOpacity ?? 75) / 100).toFixed(2);
-  previewText.style.fontSize   = (s.fontSize || 16) + 'px';
+  previewText.style.fontSize = (s.fontSize || 16) + 'px';
   previewText.style.fontFamily = `"${s.fontFamily || 'Trebuchet MS'}", sans-serif`;
-  previewText.style.color      = s.textColor || '#ffffff';
+  previewText.style.color = s.textColor || '#ffffff';
   previewText.style.background = `rgba(0,0,0,${opacity})`;
 }
 
@@ -125,18 +113,3 @@ function flashSaved() {
   saveIndicator.classList.add('show');
   setTimeout(() => saveIndicator.classList.remove('show'), 1800);
 }
-
-// ─── PiP Status Check ────────────────────────────────────────────────────────
-// Query the active YouTube tab
-chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-  if (!tabs[0]) return;
-  const url = tabs[0].url || '';
-  if (url.includes('youtube.com/watch')) {
-    statusDot.classList.add('active');
-    statusText.textContent = 'Active on YouTube video page';
-  } else if (url.includes('youtube.com')) {
-    statusText.textContent = 'Go to a video page';
-  } else {
-    statusText.textContent = 'Works on YouTube';
-  }
-});
